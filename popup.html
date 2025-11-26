@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proxy Switcher</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container" id="mainView">
+    <div class="header">
+      <h1>代理切换器</h1>
+      <div class="status">
+        <span id="proxyStatus" class="status-text">关闭</span>
+      </div>
+    </div>
+
+    <div class="profiles-list" id="profilesList">
+      <!-- 配置列表将通过 JS 动态生成 -->
+    </div>
+
+    <div class="footer">
+      <div class="hint">
+        <span>↑↓ 选择</span>
+        <span>Enter 应用</span>
+        <span>E 编辑</span>
+        <span>D 删除</span>
+        <span>N 新建</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container hidden" id="formView">
+    <h2 id="formTitle">新建代理配置</h2>
+    <input type="hidden" id="editingIndex" value="">
+
+    <div class="form-group">
+      <label>配置名称</label>
+      <input type="text" id="profileName" placeholder="例如：公司代理" autofocus>
+    </div>
+
+    <div class="form-group">
+      <label>代理类型</label>
+      <select id="proxyType">
+        <option value="http">HTTP</option>
+        <option value="https">HTTPS</option>
+        <option value="socks4">SOCKS4</option>
+        <option value="socks5">SOCKS5</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>服务器地址</label>
+      <input type="text" id="proxyHost" placeholder="例如：127.0.0.1">
+    </div>
+
+    <div class="form-group">
+      <label>端口</label>
+      <input type="number" id="proxyPort" placeholder="例如：8080">
+    </div>
+
+    <div class="form-actions">
+      <button id="saveProfileBtn" class="btn btn-primary">保存 (Enter)</button>
+      <button id="cancelProfileBtn" class="btn btn-secondary">取消 (Esc)</button>
+    </div>
+
+    <div class="hint">
+      <span>Enter 保存</span>
+      <span>Esc 取消</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

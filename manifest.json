@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Proxy Switcher",
+  "version": "1.0.0",
+  "description": "快速切换代理设置的Chrome扩展",
+  "permissions": [
+    "proxy",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+O",
+        "mac": "Alt+Shift+O"
+      },
+      "description": "打开代理切换面板"
+    }
+  }
+}
