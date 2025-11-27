@@ -184,8 +184,12 @@ async function clearProxy() {
 
 // 显示通知
 function showNotification(title, message) {
+  // 创建一个简单的数据URL图标
+  const iconDataUrl = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" fill="%234A90E2"/><text x="64" y="88" font-size="80" fill="white" text-anchor="middle" font-family="Arial" font-weight="bold">P</text></svg>';
+
   chrome.notifications.create({
     type: 'basic',
+    iconUrl: iconDataUrl,
     title: title,
     message: message,
     priority: 0

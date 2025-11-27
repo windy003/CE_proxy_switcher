@@ -5,7 +5,8 @@
   "description": "快速切换代理设置的Chrome扩展",
   "permissions": [
     "proxy",
-    "storage"
+    "storage",
+    "notifications"
   ],
   "host_permissions": [
     "<all_urls>"
