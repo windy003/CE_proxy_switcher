@@ -32,9 +32,14 @@ async function loadData() {
   currentProfileIndex = data.currentProfileIndex ?? -1;
   proxyEnabled = data.proxyEnabled || false;
 
-  // 默认选中当前激活的配置
-  if (currentProfileIndex >= 0 && currentProfileIndex < profiles.length) {
-    selectedIndex = currentProfileIndex;
+  // 自动选中"对面"的选项，方便快速切换
+  // 如果当前是直连，则选中第一个代理配置；如果当前是代理，则选中直连
+  if (proxyEnabled) {
+    // 当前使用代理，选中直连选项
+    selectedIndex = -1;
+  } else {
+    // 当前是直连，选中第一个代理配置（如果存在）
+    selectedIndex = profiles.length > 0 ? 0 : -1;
   }
 
   updateStatus();
