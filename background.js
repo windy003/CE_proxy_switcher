@@ -35,15 +35,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// 监听快捷键
-chrome.commands.onCommand.addListener((command) => {
-  if (command === 'toggle-proxy') {
-    handleToggleProxyShortcut();
-  } else if (command === 'next-profile') {
-    handleNextProfile();
-  }
-});
-
 // 切换代理开关
 async function handleToggleProxy(enabled) {
   await chrome.storage.local.set({ proxyEnabled: enabled });
@@ -70,16 +61,6 @@ async function handleToggleProxy(enabled) {
   updateIcon();
 }
 
-// 快捷键切换代理
-async function handleToggleProxyShortcut() {
-  const data = await chrome.storage.local.get(['proxyEnabled']);
-  await handleToggleProxy(!data.proxyEnabled);
-
-  // 显示通知
-  const status = !data.proxyEnabled ? '已启用' : '已关闭';
-  showNotification('代理状态', `代理${status}`);
-}
-
 // 设置指定配置
 async function handleSetProfile(index) {
   const data = await chrome.storage.local.get(['profiles']);
@@ -101,22 +82,6 @@ async function handleSetProfile(index) {
 
   // 更新图标
   updateIcon();
-}
-
-// 切换到下一个配置
-async function handleNextProfile() {
-  const data = await chrome.storage.local.get(['profiles', 'currentProfileIndex']);
-  const profiles = data.profiles || [];
-
-  if (profiles.length === 0) {
-    showNotification('代理配置', '没有可用的代理配置');
-    return;
-  }
-
-  const currentIndex = data.currentProfileIndex ?? -1;
-  const nextIndex = (currentIndex + 1) % profiles.length;
-
-  await handleSetProfile(nextIndex);
 }
 
 // 清除代理
