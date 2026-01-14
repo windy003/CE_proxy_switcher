@@ -26,40 +26,12 @@ async function initializeStorage() {
 
 // 监听消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'toggleProxy') {
-    handleToggleProxy(request.enabled);
-  } else if (request.action === 'setProfile') {
+  if (request.action === 'setProfile') {
     handleSetProfile(request.index);
   } else if (request.action === 'clearProxy') {
     handleClearProxy();
   }
 });
-
-// 切换代理开关
-async function handleToggleProxy(enabled) {
-  await chrome.storage.local.set({ proxyEnabled: enabled });
-
-  if (enabled) {
-    const data = await chrome.storage.local.get(['currentProfileIndex', 'profiles']);
-    const index = data.currentProfileIndex ?? -1;
-
-    if (index >= 0 && data.profiles && data.profiles[index]) {
-      await applyProxy(data.profiles[index]);
-    } else if (data.profiles && data.profiles.length > 0) {
-      // 如果没有选中的配置，使用第一个
-      await chrome.storage.local.set({ currentProfileIndex: 0 });
-      await applyProxy(data.profiles[0]);
-    } else {
-      console.log('No proxy profiles available');
-      await chrome.storage.local.set({ proxyEnabled: false });
-    }
-  } else {
-    await clearProxy();
-  }
-
-  // 更新图标
-  updateIcon();
-}
 
 // 设置指定配置
 async function handleSetProfile(index) {
