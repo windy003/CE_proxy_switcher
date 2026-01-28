@@ -100,17 +100,20 @@ async function applyProxy(profile) {
   });
 }
 
-// 清除代理
+// 清除代理（设置为直连模式，不使用任何代理包括系统代理）
 async function clearProxy() {
   return new Promise((resolve, reject) => {
-    chrome.proxy.settings.clear(
-      { scope: 'regular' },
+    chrome.proxy.settings.set(
+      {
+        value: { mode: 'direct' },  // 明确设置为直连，忽略系统代理
+        scope: 'regular'
+      },
       () => {
         if (chrome.runtime.lastError) {
-          console.error('Error clearing proxy:', chrome.runtime.lastError);
+          console.error('Error setting direct mode:', chrome.runtime.lastError);
           reject(chrome.runtime.lastError);
         } else {
-          console.log('Proxy cleared');
+          console.log('Proxy set to direct mode');
           chrome.storage.local.set({ currentProfile: null });
           resolve();
         }
