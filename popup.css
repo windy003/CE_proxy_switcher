@@ -73,11 +73,11 @@ body {
 }
 
 .status-text.enabled {
-  background: rgba(34, 197, 94, 0.3);
+  background: rgba(74, 144, 226, 0.7);
 }
 
 .status-text.disabled {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(107, 114, 128, 0.65);
 }
 
 /* 当前网站卡片 */
@@ -143,9 +143,9 @@ body {
 }
 
 .site-btn.active[data-action="direct"] {
-  background: #dcfce7;
-  border-color: #86efac;
-  color: #15803d;
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #374151;
   font-weight: 600;
 }
 
@@ -195,12 +195,25 @@ body {
 }
 
 .profile-item.active {
-  background: #f0fdf4;
+  background: #eff6ff;
+}
+
+.profile-item.direct-item.active {
+  background: #f3f4f6;
+}
+
+.profile-item.direct-item.selected {
+  border-left-color: #9ca3af;
 }
 
 .profile-item.selected.active {
-  background: #dcfce7;
-  border-left-color: #22c55e;
+  background: #dbeafe;
+  border-left-color: #3b82f6;
+}
+
+.profile-item.direct-item.selected.active {
+  background: #e5e7eb;
+  border-left-color: #9ca3af;
 }
 
 .profile-info {
@@ -222,10 +235,14 @@ body {
 
 .profile-status {
   font-size: 13px;
-  color: #22c55e;
+  color: #3b82f6;
   font-weight: 600;
   min-width: 50px;
   text-align: right;
+}
+
+.profile-item.direct-item .profile-status {
+  color: #6b7280;
 }
 
 .empty-hint {

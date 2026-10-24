@@ -92,14 +92,31 @@ async function loadData() {
   updateStatus();
 }
 
-// 更新状态显示
+// 当前网站实际走代理还是直连（PAC 模式下按规则和默认动作判断）
+function getCurrentSiteAction() {
+  if (!proxyEnabled) return 'direct';
+  if (!currentSite) return 'proxy';
+  if (isAlwaysDirectHost(currentSite.host)) return 'direct';
+
+  const usePac = rules.length > 0 || defaultAction === 'direct';
+  if (!usePac) return 'proxy';
+
+  const matching = findMatchingRule();
+  return matching ? matching.action : defaultAction;
+}
+
+// 更新状态显示：走代理显示蓝色，直连显示灰色
 function updateStatus() {
-  if (proxyEnabled && currentProfileIndex >= 0 && profiles[currentProfileIndex]) {
-    proxyStatus.textContent = `已启用 - ${profiles[currentProfileIndex].name}`;
+  const currentProfile = proxyEnabled && currentProfileIndex >= 0
+    ? profiles[currentProfileIndex]
+    : null;
+
+  if (proxyEnabled && getCurrentSiteAction() === 'proxy') {
+    proxyStatus.textContent = currentProfile ? `已启用 - ${currentProfile.name}` : '已启用';
     proxyStatus.className = 'status-text enabled';
   } else if (proxyEnabled) {
-    proxyStatus.textContent = '已启用';
-    proxyStatus.className = 'status-text enabled';
+    proxyStatus.textContent = '直连（当前网站）';
+    proxyStatus.className = 'status-text disabled';
   } else {
     proxyStatus.textContent = '直连';
     proxyStatus.className = 'status-text disabled';
@@ -214,6 +231,8 @@ function isAlwaysDirectHost(host) {
 
 // 渲染当前网站卡片
 function renderSiteCard() {
+  updateStatus();
+
   if (!currentSite) {
     siteCard.classList.add('hidden');
     return;
@@ -299,7 +318,7 @@ function renderProfiles() {
 
   // 添加"直连"选项
   const directItem = document.createElement('div');
-  directItem.className = 'profile-item' +
+  directItem.className = 'profile-item direct-item' +
     (selectedIndex === -1 ? ' selected' : '') +
     (!proxyEnabled ? ' active' : '');
   directItem.dataset.index = '-1';

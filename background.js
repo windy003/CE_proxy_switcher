@@ -312,11 +312,15 @@ function showNotification(title, message) {
   }
 }
 
-// 更新图标背景色
+// 更新图标：外层背景表示全局代理开关（开启蓝色，关闭灰色），
+// 中间圆点表示当前标签页实际是否走代理（走代理红色，直连白色）
 async function updateIcon() {
   try {
-    const data = await chrome.storage.local.get(['proxyEnabled']);
-    const enabled = data.proxyEnabled || false;
+    const data = await chrome.storage.local.get([
+      'profiles', 'currentProfileIndex', 'proxyEnabled', 'rules', 'defaultAction'
+    ]);
+    const enabled = !!data.proxyEnabled;
+    const proxied = (await getActiveMode(data)) === 'proxy';
 
     // 按工具栏需要的尺寸分别生成图标，避免单个大尺寸 ImageData 被新版 Chrome 拒绝
     const imageData = {};
@@ -324,16 +328,15 @@ async function updateIcon() {
       const canvas = new OffscreenCanvas(size, size);
       const ctx = canvas.getContext('2d');
 
-      // 设置背景色
-      ctx.fillStyle = enabled ? '#4A90E2' : '#9E9E9E'; // 蓝色或灰色
+      // 外层背景色：全局开关开启为蓝色，关闭为灰色
+      ctx.fillStyle = enabled ? '#4A90E2' : '#9E9E9E';
       ctx.fillRect(0, 0, size, size);
 
-      // 绘制字母 P（字号随尺寸缩放）
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `bold ${Math.round(size * 0.625)}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('P', size / 2, size / 2);
+      // 中间圆点：当前标签页实际走代理为红色，否则为白色
+      ctx.fillStyle = proxied ? '#EF4444' : '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size * 0.3, 0, Math.PI * 2);
+      ctx.fill();
 
       imageData[size] = ctx.getImageData(0, 0, size, size);
     }
@@ -348,9 +351,126 @@ async function updateIcon() {
   }
 }
 
-// 代理开关状态变化时同步图标（兜底，确保任何入口都能刷新）
+// 获取当前活动标签页
+function getActiveTab() {
+  return new Promise(resolve => {
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
+      if (chrome.runtime.lastError || !tabs || tabs.length === 0) {
+        resolve(null);
+      } else {
+        resolve(tabs[0]);
+      }
+    });
+  });
+}
+
+// 本地地址始终直连（与 PAC 脚本保持一致）
+function isAlwaysDirectHost(host) {
+  const h = host.toLowerCase();
+  return h === 'localhost' ||
+    h === '::1' ||
+    h === '[::1]' ||
+    h.indexOf('.') === -1 ||
+    h.startsWith('127.');
+}
+
+// 与 PAC 规则保持一致的单条规则匹配
+function ruleMatches(rule, url, host) {
+  const raw = rule.pattern.trim();
+  if (!raw) return false;
+
+  if (raw.includes('://')) {
+    if (raw.includes('*')) {
+      return globMatch(url, raw);
+    }
+    if (raw.endsWith('/')) {
+      return url.indexOf(raw) === 0;
+    }
+    return url.indexOf(raw) === 0 &&
+      (url.length === raw.length || '/?#:'.indexOf(url.charAt(raw.length)) !== -1);
+  }
+
+  const pattern = raw.toLowerCase();
+  const siteHost = host.toLowerCase();
+
+  if (pattern.startsWith('*.')) {
+    const base = pattern.slice(2);
+    return siteHost === base || siteHost.endsWith('.' + base);
+  }
+  if (pattern.includes('*')) {
+    return globMatch(siteHost, pattern);
+  }
+  return siteHost === pattern || siteHost.endsWith('.' + pattern);
+}
+
+function globMatch(value, pattern) {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '.*')
+    .replace(/\?/g, '.');
+  return new RegExp('^' + escaped + '$').test(value);
+}
+
+// 计算当前标签页实际走代理还是直连（PAC 模式按规则及默认动作判断）
+// 传入 data 可复用调用方已读取的存储，避免重复读取
+async function getActiveMode(data) {
+  data = data || await chrome.storage.local.get([
+    'profiles', 'currentProfileIndex', 'proxyEnabled', 'rules', 'defaultAction'
+  ]);
+
+  if (!data.proxyEnabled) return 'direct';
+  if (!(data.profiles || [])[data.currentProfileIndex]) return 'direct';
+
+  const tab = await getActiveTab();
+  if (!tab || !tab.url || !/^https?:\/\//i.test(tab.url)) {
+    // chrome://、扩展页面等不经过代理
+    return 'direct';
+  }
+
+  let url;
+  try {
+    url = new URL(tab.url);
+  } catch (error) {
+    return 'direct';
+  }
+
+  const host = url.hostname;
+  if (isAlwaysDirectHost(host)) return 'direct';
+
+  const rules = normalizeRules(data.rules);
+  const defaultAction = data.defaultAction || DEFAULT_ACTION;
+  const usePac = rules.length > 0 || defaultAction === 'direct';
+
+  // 全局代理模式：没有规则且默认走代理
+  if (!usePac) return 'proxy';
+
+  const matched = rules.find(rule => ruleMatches(rule, tab.url, host));
+  const action = matched ? matched.action : defaultAction;
+  return action === 'direct' ? 'direct' : 'proxy';
+}
+
+// 代理开关、配置或规则变化时同步图标
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.proxyEnabled) {
+  if (area !== 'local') return;
+  if (changes.proxyEnabled || changes.currentProfileIndex ||
+      changes.profiles || changes.rules || changes.defaultAction) {
+    updateIcon();
+  }
+});
+
+// 切换标签页、页面跳转或窗口切换时，按当前页面重新计算图标颜色
+chrome.tabs.onActivated.addListener(() => {
+  updateIcon();
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (tab && tab.active && (changeInfo.url || changeInfo.status === 'complete')) {
+    updateIcon();
+  }
+});
+
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId !== chrome.windows.WINDOW_ID_NONE) {
     updateIcon();
   }
 });
