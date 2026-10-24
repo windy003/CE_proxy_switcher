@@ -30,6 +30,13 @@ const siteDirectBtn = document.getElementById('siteDirectBtn');
 const siteResetBtn = document.getElementById('siteResetBtn');
 const siteHint = document.getElementById('siteHint');
 
+// 当前网站卡片的字母快捷键
+const SITE_SHORTCUTS = {
+  P: 'proxy',
+  D: 'direct',
+  F: 'reset'
+};
+
 // 状态变量
 let profiles = [];
 let currentProfileIndex = -1;
@@ -553,6 +560,26 @@ function setupKeyboardNavigation() {
       return;
     }
 
+    // 当前网站卡片：P 走代理 / D 直连 / F 跟随默认
+    if (currentSite && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const shortcut = SITE_SHORTCUTS[e.key.toUpperCase()];
+      if (shortcut === 'proxy' && !siteProxyBtn.disabled) {
+        e.preventDefault();
+        setSiteAction('proxy');
+        return;
+      }
+      if (shortcut === 'direct' && !siteDirectBtn.disabled) {
+        e.preventDefault();
+        setSiteAction('direct');
+        return;
+      }
+      if (shortcut === 'reset' && !siteResetBtn.classList.contains('hidden')) {
+        e.preventDefault();
+        resetSiteRule();
+        return;
+      }
+    }
+
     // 主视图键盘操作
     switch(e.key) {
       case 'ArrowUp':
@@ -572,8 +599,8 @@ function setupKeyboardNavigation() {
         e.preventDefault();
         editSelectedProfile();
         break;
-      case 'd':
-      case 'D':
+      case 'Delete':
+      case 'Backspace':
         e.preventDefault();
         deleteSelectedProfile();
         break;

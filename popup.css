@@ -245,6 +245,20 @@ body {
   color: #6b7280;
 }
 
+/* 网站按钮上的字母快捷键提示 */
+.site-key {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 13px;
+  opacity: 0.55;
+}
+
 .empty-hint {
   padding: 32px 16px;
   text-align: center;
