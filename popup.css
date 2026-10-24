@@ -453,6 +453,50 @@ body {
   text-decoration: underline;
 }
 
+.rules-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.rules-search input {
+  width: 100%;
+  padding: 8px 30px 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.rules-search input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-clear {
+  position: absolute;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
 .rules-list {
   display: flex;
   flex-direction: column;
@@ -467,6 +511,105 @@ body {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
+}
+
+.rule-item mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.rule-item.editing {
+  display: block;
+  padding: 8px;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
+}
+
+.rule-edit-pattern-row {
+  margin-bottom: 6px;
+}
+
+.rule-edit-pattern {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #1f2937;
+}
+
+.rule-edit-pattern:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
+}
+
+.rule-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rule-edit-action {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: white;
+  font-size: 12px;
+  font-family: inherit;
+  color: #374151;
+}
+
+.rule-edit-action:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.rule-btn {
+  flex: none;
+  padding: 5px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: white;
+  color: #4b5563;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.rule-btn:hover {
+  background: #f9fafb;
+}
+
+.rule-save {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: white;
+}
+
+.rule-save:hover {
+  background: #2563eb;
+}
+
+.rule-edit-btn {
+  flex: none;
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rule-edit-btn:hover {
+  color: #3b82f6;
 }
 
 .rule-pattern {

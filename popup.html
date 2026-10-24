@@ -119,8 +119,13 @@
       </div>
 
       <div class="rules-list-head">
-        <span>规则列表</span>
+        <span id="rulesCountLabel">规则列表</span>
         <button id="clearRulesBtn" class="link-btn">清空规则并恢复默认</button>
+      </div>
+
+      <div class="rules-search">
+        <input type="text" id="ruleSearch" placeholder="搜索规则：域名、URL 或 走代理/直连" autocomplete="off" spellcheck="false">
+        <button id="clearSearchBtn" class="search-clear hidden" title="清除搜索">×</button>
       </div>
 
       <div class="rules-list" id="rulesList"></div>
@@ -129,7 +134,8 @@
     <div class="footer">
       <div class="hint">
         <span>Enter 添加</span>
-        <span>点击标签切换 代理/直连</span>
+        <span>/ 搜索</span>
+        <span>点击标签切换</span>
         <span>Esc 返回</span>
       </div>
     </div>

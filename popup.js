@@ -20,6 +20,9 @@ const ruleActionSelect = document.getElementById('ruleAction');
 const addRuleBtn = document.getElementById('addRuleBtn');
 const rulesList = document.getElementById('rulesList');
 const clearRulesBtn = document.getElementById('clearRulesBtn');
+const ruleSearchInput = document.getElementById('ruleSearch');
+const clearSearchBtn = document.getElementById('clearSearchBtn');
+const rulesCountLabel = document.getElementById('rulesCountLabel');
 const siteCard = document.getElementById('siteCard');
 const siteHost = document.getElementById('siteHost');
 const siteProxyBtn = document.getElementById('siteProxyBtn');
@@ -36,6 +39,8 @@ let rules = [];
 let defaultAction = 'proxy';
 let currentSite = null;
 let pacFallbackWarned = false;
+let ruleSearchQuery = '';
+let editingRuleIndex = -1;
 
 // 统一处理后台返回的代理设置结果
 function checkProxyResponse(response, context) {
@@ -355,10 +360,54 @@ function renderProfiles() {
   }
 }
 
-// 渲染网站规则
+// 判断规则是否命中搜索关键词（域名、动作均可搜索）
+function ruleMatchesQuery(rule, query) {
+  if (!query) return true;
+
+  if (rule.pattern.toLowerCase().includes(query)) return true;
+
+  const label = actionLabel(rule.action).toLowerCase();
+  if (label.includes(query)) return true;
+
+  const actionName = rule.action === 'proxy' ? 'proxy' : 'direct';
+  return query.length >= 2 && actionName.startsWith(query);
+}
+
+// 把匹配到的关键词包进 <mark>，同时保持 HTML 转义
+function highlightMatch(text, query) {
+  const source = String(text);
+  if (!query) return escapeHtml(source);
+
+  const lower = source.toLowerCase();
+  let result = '';
+  let cursor = 0;
+  let hit = lower.indexOf(query);
+
+  while (hit !== -1) {
+    result += escapeHtml(source.slice(cursor, hit));
+    result += `<mark>${escapeHtml(source.slice(hit, hit + query.length))}</mark>`;
+    cursor = hit + query.length;
+    hit = lower.indexOf(query, cursor);
+  }
+
+  return result + escapeHtml(source.slice(cursor));
+}
+
+// 渲染网站规则（支持搜索过滤与内联编辑）
 function renderRules() {
   defaultActionSelect.value = defaultAction;
   rulesList.innerHTML = '';
+
+  const query = ruleSearchQuery.trim().toLowerCase();
+  const visibleRules = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(({ rule }) => ruleMatchesQuery(rule, query));
+
+  if (query) {
+    rulesCountLabel.textContent = `搜索结果 ${visibleRules.length} / ${rules.length}`;
+  } else {
+    rulesCountLabel.textContent = rules.length > 0 ? `规则列表 · 共 ${rules.length} 条` : '规则列表';
+  }
 
   if (rules.length === 0) {
     const emptyHint = document.createElement('div');
@@ -368,19 +417,120 @@ function renderRules() {
     return;
   }
 
-  rules.forEach((rule, index) => {
+  if (visibleRules.length === 0) {
+    const emptyHint = document.createElement('div');
+    emptyHint.className = 'empty-hint';
+    emptyHint.textContent = `没有匹配「${ruleSearchQuery.trim()}」的规则`;
+    rulesList.appendChild(emptyHint);
+    return;
+  }
+
+  visibleRules.forEach(({ rule, index }) => {
     const ruleItem = document.createElement('div');
-    ruleItem.className = 'rule-item';
     ruleItem.dataset.index = index;
-    ruleItem.innerHTML = `
-      <span class="rule-pattern" title="${escapeHtml(rule.pattern)}">${escapeHtml(rule.pattern)}</span>
-      <button class="rule-badge ${rule.action === 'proxy' ? 'proxy' : 'direct'}" data-role="toggle">
-        ${rule.action === 'proxy' ? '走代理' : '直连'}
-      </button>
-      <button class="rule-delete" data-role="delete" title="删除规则">×</button>
-    `;
+
+    if (index === editingRuleIndex) {
+      // 编辑模式：直接修改规则内容和动作
+      ruleItem.className = 'rule-item editing';
+      ruleItem.innerHTML = `
+        <div class="rule-edit-pattern-row">
+          <input type="text" class="rule-edit-pattern" value="${escapeHtml(rule.pattern)}"
+            placeholder="例如 example.com 或 *.google.com" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="rule-edit-actions">
+          <select class="rule-edit-action">
+            <option value="proxy"${rule.action === 'proxy' ? ' selected' : ''}>走代理</option>
+            <option value="direct"${rule.action === 'direct' ? ' selected' : ''}>直连</option>
+          </select>
+          <button class="rule-btn rule-cancel" data-role="cancel">取消</button>
+          <button class="rule-btn rule-save" data-role="save">保存</button>
+        </div>
+      `;
+    } else {
+      ruleItem.className = 'rule-item';
+      ruleItem.innerHTML = `
+        <span class="rule-pattern" title="${escapeHtml(rule.pattern)}">${highlightMatch(rule.pattern, query)}</span>
+        <button class="rule-badge ${rule.action === 'proxy' ? 'proxy' : 'direct'}" data-role="toggle">
+          ${rule.action === 'proxy' ? '走代理' : '直连'}
+        </button>
+        <button class="rule-edit-btn" data-role="edit" title="编辑规则">✎</button>
+        <button class="rule-delete" data-role="delete" title="删除规则">×</button>
+      `;
+    }
+
     rulesList.appendChild(ruleItem);
   });
+
+  // 进入编辑模式后自动聚焦并选中规则内容
+  if (editingRuleIndex >= 0) {
+    const editInput = rulesList.querySelector('.rule-edit-pattern');
+    if (editInput) {
+      editInput.focus();
+      editInput.select();
+    }
+  }
+}
+
+// 进入某条规则的编辑模式
+function startRuleEdit(index) {
+  if (index < 0 || index >= rules.length) return;
+  editingRuleIndex = index;
+  renderRules();
+}
+
+// 取消编辑
+function cancelRuleEdit() {
+  if (editingRuleIndex === -1) return;
+  editingRuleIndex = -1;
+  renderRules();
+}
+
+// 保存编辑后的规则
+async function saveRuleEdit(item) {
+  const index = parseInt(item.dataset.index, 10);
+  const input = item.querySelector('.rule-edit-pattern');
+  const select = item.querySelector('.rule-edit-action');
+
+  if (!input || !select || !rules[index]) {
+    editingRuleIndex = -1;
+    renderRules();
+    return;
+  }
+
+  const pattern = input.value.trim();
+  if (!pattern) {
+    alert('规则内容不能为空');
+    input.focus();
+    return;
+  }
+
+  const action = select.value === 'direct' ? 'direct' : 'proxy';
+  const duplicateIndex = rules.findIndex((rule, i) =>
+    i !== index && rule.pattern.toLowerCase() === pattern.toLowerCase()
+  );
+
+  if (duplicateIndex >= 0) {
+    alert(`已存在相同的规则：${rules[duplicateIndex].pattern}`);
+    input.focus();
+    return;
+  }
+
+  rules[index] = { pattern, action };
+  editingRuleIndex = -1;
+  await saveRules();
+
+  // 搜索状态下保存后把焦点还给搜索框，方便继续查找
+  if (ruleSearchQuery.trim()) {
+    ruleSearchInput.focus();
+  }
+}
+
+// 更新搜索关键词
+function setRuleSearch(value) {
+  ruleSearchQuery = value;
+  editingRuleIndex = -1;
+  clearSearchBtn.classList.toggle('hidden', value === '');
+  renderRules();
 }
 
 // 键盘导航
@@ -608,6 +758,8 @@ async function saveProfile() {
 
 // 显示网站规则视图
 function showRulesView() {
+  // 每次打开都重置搜索和编辑状态，避免上次的过滤影响操作
+  resetRuleFilters();
   renderRules();
   mainView.classList.add('hidden');
   rulesView.classList.remove('hidden');
@@ -618,18 +770,52 @@ function showRulesView() {
 
 // 隐藏网站规则视图
 function hideRulesView() {
+  resetRuleFilters();
   rulesView.classList.add('hidden');
   mainView.classList.remove('hidden');
 }
 
 // 规则视图键盘操作
 function handleRulesKeyboard(e) {
+  const tag = e.target.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+
   if (e.key === 'Escape') {
     e.preventDefault();
-    hideRulesView();
-  } else if (e.key === 'Enter' && e.target === rulePatternInput) {
+    if (editingRuleIndex >= 0) {
+      cancelRuleEdit();
+    } else if (e.target === ruleSearchInput && ruleSearchInput.value) {
+      // 搜索框有内容时先清空搜索，再按一次才返回
+      ruleSearchInput.value = '';
+      setRuleSearch('');
+    } else {
+      hideRulesView();
+    }
+    return;
+  }
+
+  if (e.key === 'Enter') {
+    if (editingRuleIndex >= 0 && inField) {
+      e.preventDefault();
+      const item = rulesList.querySelector(`.rule-item[data-index="${editingRuleIndex}"]`);
+      if (item) saveRuleEdit(item);
+      return;
+    }
+    if (e.target === rulePatternInput) {
+      e.preventDefault();
+      addRule();
+      return;
+    }
+    if (e.target === ruleSearchInput) {
+      e.preventDefault();
+    }
+    return;
+  }
+
+  // 不在输入框中时，按 / 快速聚焦搜索框
+  if (e.key === '/' && !inField) {
     e.preventDefault();
-    addRule();
+    ruleSearchInput.focus();
   }
 }
 
@@ -655,7 +841,18 @@ async function addRule() {
 
   rulePatternInput.value = '';
   rulePatternInput.focus();
+
+  // 清除搜索筛选，确保刚添加/更新的规则可见
+  resetRuleFilters();
   await saveRules();
+}
+
+// 重置搜索与编辑状态
+function resetRuleFilters() {
+  ruleSearchQuery = '';
+  editingRuleIndex = -1;
+  ruleSearchInput.value = '';
+  clearSearchBtn.classList.add('hidden');
 }
 
 // 保存规则并让后台重新应用代理
@@ -671,7 +868,7 @@ async function saveRules() {
   renderSiteCard();
 }
 
-// 规则列表点击：切换动作或删除
+// 规则列表点击：切换动作、编辑、保存、取消或删除
 rulesList.addEventListener('click', async (e) => {
   const button = e.target.closest('button');
   if (!button) return;
@@ -680,16 +877,53 @@ rulesList.addEventListener('click', async (e) => {
   if (!item) return;
 
   const index = parseInt(item.dataset.index, 10);
+  const role = button.dataset.role;
 
-  if (button.dataset.role === 'delete') {
+  if (role === 'edit') {
+    startRuleEdit(index);
+    return;
+  }
+
+  if (role === 'save') {
+    await saveRuleEdit(item);
+    return;
+  }
+
+  if (role === 'cancel') {
+    cancelRuleEdit();
+    return;
+  }
+
+  if (role === 'delete') {
+    if (editingRuleIndex >= 0) editingRuleIndex = -1;
     rules.splice(index, 1);
-  } else if (button.dataset.role === 'toggle') {
+  } else if (role === 'toggle') {
     rules[index].action = rules[index].action === 'proxy' ? 'direct' : 'proxy';
   } else {
     return;
   }
 
   await saveRules();
+});
+
+// 双击规则本身也可以进入编辑
+rulesList.addEventListener('dblclick', (e) => {
+  if (e.target.closest('button')) return;
+  const item = e.target.closest('.rule-item');
+  if (!item || item.classList.contains('editing')) return;
+
+  startRuleEdit(parseInt(item.dataset.index, 10));
+});
+
+// 搜索框：实时过滤规则
+ruleSearchInput.addEventListener('input', () => {
+  setRuleSearch(ruleSearchInput.value);
+});
+
+clearSearchBtn.addEventListener('click', () => {
+  ruleSearchInput.value = '';
+  setRuleSearch('');
+  ruleSearchInput.focus();
 });
 
 // 配置列表点击：单击选中，双击应用
@@ -725,6 +959,7 @@ clearRulesBtn.addEventListener('click', async () => {
 
   rules = [];
   defaultAction = 'proxy';
+  resetRuleFilters();
   await saveRules();
 });
 siteProxyBtn.addEventListener('click', () => setSiteAction('proxy'));
