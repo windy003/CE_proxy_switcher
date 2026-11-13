@@ -199,17 +199,12 @@ async function updateIcon() {
       const canvas = new OffscreenCanvas(size, size);
       const ctx = canvas.getContext('2d');
 
-      // 背景色：开启为蓝色，关闭为灰色
+      // 背景色：开启为蓝色，关闭为灰色，整体展示为一个实心圆形
       ctx.fillStyle = enabled ? '#4A90E2' : '#9E9E9E';
-      ctx.fillRect(0, 0, size, size);
-
-      // 中间画一个白色圆环，作为 "O" 形标识
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = Math.max(1, size * 0.12);
 
       ctx.beginPath();
-      ctx.arc(size / 2, size / 2, size * 0.28, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      ctx.fill();
 
       imageData[size] = ctx.getImageData(0, 0, size, size);
     }
