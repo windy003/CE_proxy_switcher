@@ -11,24 +11,10 @@
     <div class="header">
       <div class="header-top">
         <h1>代理切换器</h1>
-        <button id="openRulesBtn" class="header-btn">网站规则</button>
       </div>
       <div class="status">
         <span id="proxyStatus" class="status-text">关闭</span>
       </div>
-    </div>
-
-    <div class="site-card hidden" id="siteCard">
-      <div class="site-top">
-        <span class="site-label">当前网站</span>
-        <span class="site-host" id="siteHost"></span>
-      </div>
-      <div class="site-actions">
-        <button class="site-btn" id="siteProxyBtn" data-action="proxy">走代理<span class="site-key">P</span></button>
-        <button class="site-btn" id="siteDirectBtn" data-action="direct">直连<span class="site-key">D</span></button>
-        <button class="site-btn site-reset hidden" id="siteResetBtn">跟随默认<span class="site-key">F</span></button>
-      </div>
-      <div class="site-hint" id="siteHint"></div>
     </div>
 
     <div class="profiles-list" id="profilesList">
@@ -37,13 +23,11 @@
 
     <div class="footer">
       <div class="hint">
-        <span>P/D/F 本站快捷设置</span>
         <span>↑↓ 选择</span>
         <span>Enter 应用</span>
         <span>E 编辑</span>
         <span>Del 删除</span>
         <span>N 新建</span>
-        <span>R 网站规则</span>
       </div>
     </div>
   </div>
@@ -85,60 +69,6 @@
     <div class="hint">
       <span>Enter 保存</span>
       <span>Esc 取消</span>
-    </div>
-  </div>
-
-  <div class="container hidden" id="rulesView">
-    <div class="rules-header">
-      <div>
-        <h2>网站规则</h2>
-        <p class="rules-subtitle">从上到下匹配，第一条命中的规则生效</p>
-      </div>
-      <button id="backBtn" class="btn btn-secondary btn-small">返回</button>
-    </div>
-
-    <div class="rules-body">
-      <div class="form-group">
-        <label>未匹配的网站</label>
-        <select id="defaultAction">
-          <option value="proxy">走代理</option>
-          <option value="direct">直连</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>添加规则</label>
-        <div class="rule-add-row">
-          <input type="text" id="rulePattern" placeholder="例如 example.com 或 *.google.com">
-          <select id="ruleAction">
-            <option value="proxy">走代理</option>
-            <option value="direct">直连</option>
-          </select>
-          <button id="addRuleBtn" class="btn btn-primary btn-small">添加</button>
-        </div>
-        <div class="rules-tip">域名规则会同时匹配其子域名；支持 * 通配符，也可以填写完整 URL。</div>
-      </div>
-
-      <div class="rules-list-head">
-        <span id="rulesCountLabel">规则列表</span>
-        <button id="clearRulesBtn" class="link-btn">清空规则并恢复默认</button>
-      </div>
-
-      <div class="rules-search">
-        <input type="text" id="ruleSearch" placeholder="搜索规则：域名、URL 或 走代理/直连" autocomplete="off" spellcheck="false">
-        <button id="clearSearchBtn" class="search-clear hidden" title="清除搜索">×</button>
-      </div>
-
-      <div class="rules-list" id="rulesList"></div>
-    </div>
-
-    <div class="footer">
-      <div class="hint">
-        <span>Enter 添加</span>
-        <span>/ 搜索</span>
-        <span>点击标签切换</span>
-        <span>Esc 返回</span>
-      </div>
     </div>
   </div>
 
